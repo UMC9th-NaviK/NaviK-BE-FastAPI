@@ -1,0 +1,3 @@
+"""
+Embeddings generation and management.
+"""

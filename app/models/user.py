@@ -1,0 +1,3 @@
+"""
+User model definition.
+"""

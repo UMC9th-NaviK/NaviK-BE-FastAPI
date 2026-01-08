@@ -1,0 +1,3 @@
+"""
+KPI domain module.
+"""

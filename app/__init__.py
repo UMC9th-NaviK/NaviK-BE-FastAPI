@@ -1,0 +1,3 @@
+"""
+NaviK FastAPI Application
+"""
