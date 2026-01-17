@@ -43,6 +43,9 @@ venv.bak/
 .env.local
 .env.*.local
 
+# Docker
+docker-compose.override.yml
+
 # Testing
 .pytest_cache/
 .coverage

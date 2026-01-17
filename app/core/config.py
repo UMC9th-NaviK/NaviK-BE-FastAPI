@@ -8,9 +8,6 @@ from typing import List
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
-    # Database
-    DATABASE_URL: str
-    
     # API Keys
     OPENAI_API_KEY: str = ""
     
