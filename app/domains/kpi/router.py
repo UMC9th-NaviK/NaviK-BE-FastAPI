@@ -10,17 +10,34 @@ router = APIRouter()
 
 
 @router.post("/analyze/backend", response_model=ResumeAnalysisResponse)
-async def analyze_resume_endpoint(
+async def analyze_backend_resume_endpoint(
     request: ResumeAnalysisRequest
 ):
     """
-    이력서 분석 및 KPI 점수 계산.
+    백엔드 개발자 이력서 분석 및 KPI 점수 계산.
     
     이력서 텍스트를 입력받아 각 KPI별 점수를 계산하고,
     강점/약점 KPI를 추출합니다.
     """
     try:
-        result = analyze_resume(request.resume_text)
+        result = analyze_resume(request.resume_text, role="backend")
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"분석 중 오류 발생: {str(e)}")
+
+
+@router.post("/analyze/frontend", response_model=ResumeAnalysisResponse)
+async def analyze_frontend_resume_endpoint(
+    request: ResumeAnalysisRequest
+):
+    """
+    프론트엔드 개발자 이력서 분석 및 KPI 점수 계산.
+    
+    이력서 텍스트를 입력받아 각 KPI별 점수를 계산하고,
+    강점/약점 KPI를 추출합니다.
+    """
+    try:
+        result = analyze_resume(request.resume_text, role="frontend")
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"분석 중 오류 발생: {str(e)}")
