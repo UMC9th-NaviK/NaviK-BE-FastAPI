@@ -12,7 +12,7 @@ from app.domains.kpi.scorer import calculate_kpi_scores, get_top_bottom_kpis
 from app.schemas.kpi import ResumeAnalysisResponse, KPIScoreResult
 
 
-def analyze_resume(resume_text: str) -> ResumeAnalysisResponse:
+def analyze_resume(resume_text: str, role: str = "backend") -> ResumeAnalysisResponse:
     """
     이력서 분석 및 KPI 점수 계산.
     
@@ -23,12 +23,13 @@ def analyze_resume(resume_text: str) -> ResumeAnalysisResponse:
     
     Args:
         resume_text: 이력서 텍스트
+        role: "backend" 또는 "frontend"
     
     Returns:
         분석 결과 (점수, 강점, 약점)
     """
     # LLM 직접 평가
-    kpi_scores = calculate_kpi_scores(resume_text)
+    kpi_scores = calculate_kpi_scores(resume_text, role=role)
     
     # 상위/하위 KPI 추출
     strengths, weaknesses = get_top_bottom_kpis(kpi_scores)

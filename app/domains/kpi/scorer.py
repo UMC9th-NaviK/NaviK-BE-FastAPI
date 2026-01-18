@@ -2,23 +2,26 @@
 KPI 점수 산출 모듈.
 
 LLM 직접 평가 방식으로 이력서 텍스트에서 
-백엔드 개발자 KPI 10개에 대한 점수를 산출.
+백엔드/프론트엔드 개발자 KPI 10개에 대한 점수를 산출.
 """
 
 from typing import Dict, List, Tuple
 
-from app.ai.llm_backend import evaluate_resume_kpis
+from app.ai.llm_backend import evaluate_resume_kpis as evaluate_backend_kpis
+from app.ai.llm_frontend import evaluate_resume_kpis as evaluate_frontend_kpis
 from app.domains.kpi.kpi_constants import get_kpi_name
 
 
 def calculate_kpi_scores(
-    resume_text: str
+    resume_text: str,
+    role: str = "backend"
 ) -> Dict[int, Dict[str, any]]:
     """
     이력서 텍스트에서 KPI별 점수 계산.
     
     Args:
         resume_text: 이력서 텍스트
+        role: "backend" 또는 "frontend"
     
     Returns:
         {
@@ -30,11 +33,14 @@ def calculate_kpi_scores(
         }
     """
     # LLM으로 직접 평가
-    scores = evaluate_resume_kpis(resume_text)
+    if role == "frontend":
+        scores = evaluate_frontend_kpis(resume_text)
+    else:
+        scores = evaluate_backend_kpis(resume_text)
     
     results = {}
     for kpi_id, score in scores.items():
-        kpi_name = get_kpi_name(kpi_id)
+        kpi_name = get_kpi_name(kpi_id, role=role)
         
         # 레벨 결정 (75~90: 상, 55~70: 중, 40~50: 하)
         if score >= 75:
