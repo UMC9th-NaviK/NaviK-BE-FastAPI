@@ -9,6 +9,7 @@ from typing import Dict, List, Tuple
 
 from app.ai.llm_backend import evaluate_resume_kpis as evaluate_backend_kpis
 from app.ai.llm_frontend import evaluate_resume_kpis as evaluate_frontend_kpis
+from app.ai.llm_pm import evaluate_resume_kpis as evaluate_pm_kpis
 from app.domains.kpi.kpi_constants import get_kpi_name
 
 
@@ -21,7 +22,7 @@ def calculate_kpi_scores(
     
     Args:
         resume_text: 이력서 텍스트
-        role: "backend" 또는 "frontend"
+        role: "backend", "frontend", 또는 "pm"
     
     Returns:
         {
@@ -35,6 +36,8 @@ def calculate_kpi_scores(
     # LLM으로 직접 평가
     if role == "frontend":
         scores = evaluate_frontend_kpis(resume_text)
+    elif role == "pm":
+        scores = evaluate_pm_kpis(resume_text)
     else:
         scores = evaluate_backend_kpis(resume_text)
     
