@@ -2,7 +2,7 @@
 KPI 점수 산출 모듈.
 
 LLM 직접 평가 방식으로 이력서 텍스트에서 
-백엔드/프론트엔드 개발자 KPI 10개에 대한 점수를 산출.
+백엔드/프론트엔드/PM/디자이너 KPI 10개에 대한 점수를 산출.
 """
 
 from typing import Dict, List, Tuple
@@ -10,6 +10,7 @@ from typing import Dict, List, Tuple
 from app.ai.llm_backend import evaluate_resume_kpis as evaluate_backend_kpis
 from app.ai.llm_frontend import evaluate_resume_kpis as evaluate_frontend_kpis
 from app.ai.llm_pm import evaluate_resume_kpis as evaluate_pm_kpis
+from app.ai.llm_designer import evaluate_resume_kpis as evaluate_designer_kpis
 from app.domains.kpi.kpi_constants import get_kpi_name
 
 
@@ -22,7 +23,7 @@ def calculate_kpi_scores(
     
     Args:
         resume_text: 이력서 텍스트
-        role: "backend", "frontend", 또는 "pm"
+        role: "backend", "frontend", "pm", 또는 "designer"
     
     Returns:
         {
@@ -38,6 +39,8 @@ def calculate_kpi_scores(
         scores = evaluate_frontend_kpis(resume_text)
     elif role == "pm":
         scores = evaluate_pm_kpis(resume_text)
+    elif role == "designer":
+        scores = evaluate_designer_kpis(resume_text)
     else:
         scores = evaluate_backend_kpis(resume_text)
     

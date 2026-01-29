@@ -23,7 +23,7 @@ def analyze_resume(resume_text: str, role: str = "backend") -> ResumeAnalysisRes
     
     Args:
         resume_text: 이력서 텍스트
-        role: "backend", "frontend", 또는 "pm"
+        role: "backend", "frontend", "pm", 또는 "designer"
     
     Returns:
         분석 결과 (점수, 강점, 약점)
