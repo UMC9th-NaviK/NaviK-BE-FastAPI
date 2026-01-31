@@ -106,7 +106,7 @@ Content-Type: application/json
 ```json
 {
   "scores": [
-    {"kpi_id": 1, "kpi_name": "주력 언어·프레임워크 숙련도", "score": 85, "level": "high"},
+    {"kpi_id": 1, "kpi_name": "백엔드 기술 역량", "score": 85, "level": "high"},
     ...
   ],
   "strengths": [1, 3, 5],
