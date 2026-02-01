@@ -30,10 +30,13 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
-      - name: 테스트 실행
+      - name: PR만 테스트 실행
         run: python -m pytest --maxfail=1 --disable-warnings || exit 0
 
-      - name: develop 병합 테스트
+      - name: develop 병합 충돌 테스트
         run: |
           git fetch origin develop
           git merge origin/develop --no-commit --no-ff || { echo "A conflict will occur when merging this branch with the develop branch."; exit 1; }
+
+      - name: 병합 상태에서 테스트
+        run: python -m pytest --maxfail=1 --disable-warnings || exit 0
