@@ -11,8 +11,12 @@ class KPIScoreResult(BaseModel):
     """KPI 점수 결과."""
     kpi_id: int
     kpi_name: str
-    score: int = Field(..., description="점수 (45/65/85)")
+    score: int = Field(..., description="점수 (40~90)")
     level: str = Field(..., description="high/mid/low")
+    basis: str = Field(
+        default="explicit", 
+        description="근거 수준: explicit(명시적 언급), inferred(간접 추론), none(언급 없음)"
+    )
 
 
 class ResumeAnalysisRequest(BaseModel):

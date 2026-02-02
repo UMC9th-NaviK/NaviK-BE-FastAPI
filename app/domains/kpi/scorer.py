@@ -30,7 +30,8 @@ def calculate_kpi_scores(
             kpi_id: {
                 "score": 점수 (40~90),
                 "level": "high/mid/low",
-                "kpi_name": KPI 이름
+                "kpi_name": KPI 이름,
+                "basis": "explicit/inferred/none"
             }
         }
     """
@@ -45,8 +46,17 @@ def calculate_kpi_scores(
         scores = evaluate_backend_kpis(resume_text)
     
     results = {}
-    for kpi_id, score in scores.items():
+    for kpi_id, data in scores.items():
         kpi_name = get_kpi_name(kpi_id, role=role)
+        
+        # 새 형식: {"score": 점수, "basis": "근거수준"}
+        if isinstance(data, dict):
+            score = data.get("score", 45)
+            basis = data.get("basis", "explicit")
+        else:
+            # 구 형식 호환: 점수만 있는 경우
+            score = data
+            basis = "explicit"
         
         # 레벨 결정 (75~90: 상, 55~70: 중, 40~50: 하)
         if score >= 75:
@@ -59,7 +69,8 @@ def calculate_kpi_scores(
         results[kpi_id] = {
             "score": score,
             "level": level,
-            "kpi_name": kpi_name
+            "kpi_name": kpi_name,
+            "basis": basis
         }
     
     return results
