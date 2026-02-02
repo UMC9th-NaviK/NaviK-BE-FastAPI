@@ -4,7 +4,14 @@ KPI domain API routes.
 from fastapi import APIRouter, HTTPException
 
 from app.domains.kpi.service import analyze_resume
-from app.schemas.kpi import ResumeAnalysisRequest, ResumeAnalysisResponse
+from app.domains.kpi.fallback_backend import calculate_fallback_scores
+from app.schemas.kpi import (
+    ResumeAnalysisRequest, 
+    ResumeAnalysisResponse,
+    BackendFallbackRequest,
+    BackendFallbackResponse,
+    FallbackKPIScore
+)
 
 router = APIRouter()
 
@@ -75,3 +82,59 @@ async def analyze_designer_resume_endpoint(
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"분석 중 오류 발생: {str(e)}")
+
+
+# ===== 폴백 API =====
+
+@router.post("/fallback/backend", response_model=BackendFallbackResponse)
+async def backend_fallback_endpoint(
+    request: BackendFallbackRequest
+):
+    """
+    백엔드 KPI 폴백 평가 (설문 기반).
+    
+    이력서에 근거가 부족한 KPI(basis="none")에 대해
+    설문 응답을 기반으로 점수를 계산합니다.
+    
+    ## 질문 설명
+    - Q_B1: 장애/문제 해결 경험 (1~5)
+    - Q_B2: 기능 설계 & 협업 경험 (1~5)
+    - Q_B3: 배포·운영 환경 이해 (1~5)
+    - Q_B4: 품질 & 개선 문화 경험 (1~5)
+    - Q_B5: 문제 해결 방식 (1~5)
+    
+    ## 점수 변환
+    - 1점 → 0, 2점 → 25, 3점 → 50, 4점 → 75, 5점 → 100
+    """
+    try:
+        kpi_scores = calculate_fallback_scores(
+            q_b1=request.q_b1,
+            q_b2=request.q_b2,
+            q_b3=request.q_b3,
+            q_b4=request.q_b4,
+            q_b5=request.q_b5
+        )
+        
+        scores = [
+            FallbackKPIScore(
+                kpi_id=kpi_id,
+                kpi_name=data["kpi_name"],
+                score=data["score"],
+                level=data["level"],
+                source=data["source"]
+            )
+            for kpi_id, data in sorted(kpi_scores.items())
+        ]
+        
+        return BackendFallbackResponse(
+            scores=scores,
+            raw_inputs={
+                "q_b1": request.q_b1,
+                "q_b2": request.q_b2,
+                "q_b3": request.q_b3,
+                "q_b4": request.q_b4,
+                "q_b5": request.q_b5
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"폴백 계산 중 오류 발생: {str(e)}")
