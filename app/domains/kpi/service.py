@@ -40,7 +40,8 @@ def analyze_resume(resume_text: str, role: str = "backend") -> ResumeAnalysisRes
             kpi_id=kpi_id,
             kpi_name=data["kpi_name"],
             score=data["score"],
-            level=data["level"]
+            level=data["level"],
+            basis=data.get("basis", "explicit")
         )
         for kpi_id, data in kpi_scores.items()
     ]
