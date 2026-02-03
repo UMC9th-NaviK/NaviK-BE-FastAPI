@@ -55,3 +55,18 @@ class BackendFallbackResponse(BaseModel):
     """백엔드 폴백 평가 응답."""
     scores: List[FallbackKPIScore] = Field(..., description="폴백으로 계산된 KPI 점수")
     raw_inputs: dict = Field(..., description="원본 입력값 (Q_B1~Q_B5)")
+
+
+class FrontendFallbackRequest(BaseModel):
+    """프론트엔드 폴백 평가 요청 (설문 기반)."""
+    q_b1: int = Field(..., ge=1, le=5, description="Q_B1: 컴포넌트 설계 & 상태 관리 (1~5)")
+    q_b2: int = Field(..., ge=1, le=5, description="Q_B2: API 연동 & 비동기 흐름 (1~5)")
+    q_b3: int = Field(..., ge=1, le=5, description="Q_B3: 성능 최적화 경험 (1~5)")
+    q_b4: int = Field(..., ge=1, le=5, description="Q_B4: 사용자 중심 UI 구현 (1~5)")
+    q_b5: int = Field(..., ge=1, le=5, description="Q_B5: 품질 관리 & 협업 문화 (1~5)")
+
+
+class FrontendFallbackResponse(BaseModel):
+    """프론트엔드 폴백 평가 응답."""
+    scores: List[FallbackKPIScore] = Field(..., description="폴백으로 계산된 KPI 점수")
+    raw_inputs: dict = Field(..., description="원본 입력값 (Q_B1~Q_B5)")

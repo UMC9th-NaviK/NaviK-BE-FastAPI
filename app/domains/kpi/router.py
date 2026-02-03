@@ -5,11 +5,14 @@ from fastapi import APIRouter, HTTPException
 
 from app.domains.kpi.service import analyze_resume
 from app.domains.kpi.fallback_backend import calculate_fallback_scores
+from app.domains.kpi.fallback_frontend import calculate_fallback_scores as calculate_frontend_fallback_scores
 from app.schemas.kpi import (
     ResumeAnalysisRequest, 
     ResumeAnalysisResponse,
     BackendFallbackRequest,
     BackendFallbackResponse,
+    FrontendFallbackRequest,
+    FrontendFallbackResponse,
     FallbackKPIScore
 )
 
@@ -127,6 +130,60 @@ async def backend_fallback_endpoint(
         ]
         
         return BackendFallbackResponse(
+            scores=scores,
+            raw_inputs={
+                "q_b1": request.q_b1,
+                "q_b2": request.q_b2,
+                "q_b3": request.q_b3,
+                "q_b4": request.q_b4,
+                "q_b5": request.q_b5
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"폴백 계산 중 오류 발생: {str(e)}")
+
+
+@router.post("/fallback/frontend", response_model=FrontendFallbackResponse)
+async def frontend_fallback_endpoint(
+    request: FrontendFallbackRequest
+):
+    """
+    프론트엔드 KPI 폴백 평가 (설문 기반).
+
+    이력서에 근거가 부족한 KPI(basis="none")에 대해
+    설문 응답을 기반으로 점수를 계산합니다.
+
+    ## 질문 설명
+    - Q_B1: 컴포넌트 설계 & 상태 관리 (1~5)
+    - Q_B2: API 연동 & 비동기 흐름 (1~5)
+    - Q_B3: 성능 최적화 경험 (1~5)
+    - Q_B4: 사용자 중심 UI 구현 (1~5)
+    - Q_B5: 품질 관리 & 협업 문화 (1~5)
+
+    ## 점수 변환
+    - 1점 → 0, 2점 → 25, 3점 → 50, 4점 → 75, 5점 → 100
+    """
+    try:
+        kpi_scores = calculate_frontend_fallback_scores(
+            q_b1=request.q_b1,
+            q_b2=request.q_b2,
+            q_b3=request.q_b3,
+            q_b4=request.q_b4,
+            q_b5=request.q_b5
+        )
+
+        scores = [
+            FallbackKPIScore(
+                kpi_id=kpi_id,
+                kpi_name=data["kpi_name"],
+                score=data["score"],
+                level=data["level"],
+                source=data["source"]
+            )
+            for kpi_id, data in sorted(kpi_scores.items())
+        ]
+
+        return FrontendFallbackResponse(
             scores=scores,
             raw_inputs={
                 "q_b1": request.q_b1,
