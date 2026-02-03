@@ -7,6 +7,7 @@ from app.domains.kpi.service import analyze_resume
 from app.domains.kpi.fallback_backend import calculate_fallback_scores
 from app.domains.kpi.fallback_frontend import calculate_fallback_scores as calculate_frontend_fallback_scores
 from app.domains.kpi.fallback_designer import calculate_fallback_scores as calculate_designer_fallback_scores
+from app.domains.kpi.fallback_pm import calculate_fallback_scores as calculate_pm_fallback_scores
 from app.schemas.kpi import (
     ResumeAnalysisRequest, 
     ResumeAnalysisResponse,
@@ -16,6 +17,8 @@ from app.schemas.kpi import (
     FrontendFallbackResponse,
     DesignerFallbackRequest,
     DesignerFallbackResponse,
+    PMFallbackRequest,
+    PMFallbackResponse,
     FallbackKPIScore
 )
 
@@ -241,6 +244,60 @@ async def designer_fallback_endpoint(
         ]
 
         return DesignerFallbackResponse(
+            scores=scores,
+            raw_inputs={
+                "q_b1": request.q_b1,
+                "q_b2": request.q_b2,
+                "q_b3": request.q_b3,
+                "q_b4": request.q_b4,
+                "q_b5": request.q_b5
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"폴백 계산 중 오류 발생: {str(e)}")
+
+
+@router.post("/fallback/pm", response_model=PMFallbackResponse)
+async def pm_fallback_endpoint(
+    request: PMFallbackRequest
+):
+    """
+    PM KPI 폴백 평가 (설문 기반).
+
+    이력서에 근거가 부족한 KPI(basis="none")에 대해
+    설문 응답을 기반으로 점수를 계산합니다.
+
+    ## 질문 설명
+    - Q_PM_B1: 문제 정의 & 가설 수립 (1~5)
+    - Q_PM_B2: 데이터 기반 판단 & 우선순위 도출 (1~5)
+    - Q_PM_B3: 서비스 구조 & 핵심 플로우 결정 (1~5)
+    - Q_PM_B4: 요구사항 정의 & 정책 문서화 (1~5)
+    - Q_PM_B5: 실험·검증 기반 의사결정 (1~5)
+
+    ## 점수 변환
+    - 1점 → 0, 2점 → 25, 3점 → 50, 4점 → 75, 5점 → 100
+    """
+    try:
+        kpi_scores = calculate_pm_fallback_scores(
+            q_b1=request.q_b1,
+            q_b2=request.q_b2,
+            q_b3=request.q_b3,
+            q_b4=request.q_b4,
+            q_b5=request.q_b5
+        )
+
+        scores = [
+            FallbackKPIScore(
+                kpi_id=kpi_id,
+                kpi_name=data["kpi_name"],
+                score=data["score"],
+                level=data["level"],
+                source=data["source"]
+            )
+            for kpi_id, data in sorted(kpi_scores.items())
+        ]
+
+        return PMFallbackResponse(
             scores=scores,
             raw_inputs={
                 "q_b1": request.q_b1,
