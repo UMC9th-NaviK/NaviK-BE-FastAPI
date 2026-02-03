@@ -278,7 +278,7 @@ FEW_SHOT_EXAMPLES = """
 """
 
 
-def evaluate_resume_kpis(resume_text: str) -> Dict[int, int]:
+def evaluate_resume_kpis(resume_text: str) -> Dict[int, Dict[str, any]]:
     """
     이력서 텍스트를 LLM이 직접 평가하여 디자이너 KPI별 점수 산출.
     
@@ -289,7 +289,9 @@ def evaluate_resume_kpis(resume_text: str) -> Dict[int, int]:
         resume_text: 이력서/경력 텍스트
     
     Returns:
-        {kpi_id: 점수} (점수는 40~90 범위의 정수)
+        {kpi_id: {"score": 점수, "basis": 근거수준}}
+        - score: 40~90 범위의 정수
+        - basis: "explicit" | "inferred" | "none"
     """
     client = OpenAI(api_key=settings.OPENAI_API_KEY)
     
@@ -301,8 +303,21 @@ def evaluate_resume_kpis(resume_text: str) -> Dict[int, int]:
 {FEW_SHOT_EXAMPLES}
 
 ## 출력 형식
-반드시 JSON 형식으로만 응답해. 설명 없이 점수만 출력.
-{{"1": 점수, "2": 점수, ..., "10": 점수}}
+반드시 JSON 형식으로만 응답해. 각 KPI에 대해 점수와 근거 수준(basis)을 함께 출력.
+
+```json
+{{
+  "1": {{"score": 점수, "basis": "근거수준"}},
+  "2": {{"score": 점수, "basis": "근거수준"}},
+  ...
+  "10": {{"score": 점수, "basis": "근거수준"}}
+}}
+```
+
+## 근거 수준(basis) 판단 기준
+- **"explicit"**: 텍스트에 해당 KPI 관련 **구체적 경험/작업/성과가 명시**되어 있음
+- **"inferred"**: 직접 언급은 없지만 **맥락상 추론 가능** (예: Figma 사용 → 프로토타이핑 추론)
+- **"none"**: 해당 KPI 관련 **언급이 전혀 없음** → 점수는 40~50 범위
 
 ## 점수 부여 규칙 (중요!)
 - 상 수준: 75~90 범위에서 근거 강도에 따라 차등 (예: 강한 상=88, 보통 상=82, 약한 상=76)
@@ -316,7 +331,7 @@ def evaluate_resume_kpis(resume_text: str) -> Dict[int, int]:
 
 {resume_text}
 
-JSON 형식으로 10개 KPI 점수를 출력해."""
+JSON 형식으로 10개 KPI의 점수(score)와 근거수준(basis)을 출력해."""
 
     try:
         response = client.chat.completions.create(
@@ -325,20 +340,26 @@ JSON 형식으로 10개 KPI 점수를 출력해."""
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            temperature=0.3,  # 약간의 변동성 허용
+            temperature=0.0,  # 일관성 최대화
             response_format={"type": "json_object"}
         )
         
         result = response.choices[0].message.content
         scores = json.loads(result)
         
-        # KPI ID를 int로 변환하고 범위 제한
-        return {
-            int(kpi_id): max(40, min(90, int(score))) 
-            for kpi_id, score in scores.items()
-        }
+        parsed_scores = {}
+        for kpi_id, data in scores.items():
+            if isinstance(data, dict):
+                score = max(40, min(90, int(data.get("score", 45))))
+                basis = data.get("basis", "explicit")
+                if basis not in ("explicit", "inferred", "none"):
+                    basis = "explicit"
+            else:
+                score = max(40, min(90, int(data)))
+                basis = "explicit"
+            parsed_scores[int(kpi_id)] = {"score": score, "basis": basis}
+        return parsed_scores
     
     except Exception as e:
         print(f"LLM 평가 오류: {e}")
-        # 오류 시 기본값 반환
-        return {i: 45 for i in range(1, 11)}
+        return {i: {"score": 45, "basis": "none"} for i in range(1, 11)}

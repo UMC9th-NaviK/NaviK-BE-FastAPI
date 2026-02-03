@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException
 from app.domains.kpi.service import analyze_resume
 from app.domains.kpi.fallback_backend import calculate_fallback_scores
 from app.domains.kpi.fallback_frontend import calculate_fallback_scores as calculate_frontend_fallback_scores
+from app.domains.kpi.fallback_designer import calculate_fallback_scores as calculate_designer_fallback_scores
 from app.schemas.kpi import (
     ResumeAnalysisRequest, 
     ResumeAnalysisResponse,
@@ -13,6 +14,8 @@ from app.schemas.kpi import (
     BackendFallbackResponse,
     FrontendFallbackRequest,
     FrontendFallbackResponse,
+    DesignerFallbackRequest,
+    DesignerFallbackResponse,
     FallbackKPIScore
 )
 
@@ -184,6 +187,60 @@ async def frontend_fallback_endpoint(
         ]
 
         return FrontendFallbackResponse(
+            scores=scores,
+            raw_inputs={
+                "q_b1": request.q_b1,
+                "q_b2": request.q_b2,
+                "q_b3": request.q_b3,
+                "q_b4": request.q_b4,
+                "q_b5": request.q_b5
+            }
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"폴백 계산 중 오류 발생: {str(e)}")
+
+
+@router.post("/fallback/designer", response_model=DesignerFallbackResponse)
+async def designer_fallback_endpoint(
+    request: DesignerFallbackRequest
+):
+    """
+    디자이너 KPI 폴백 평가 (설문 기반).
+
+    이력서에 근거가 부족한 KPI(basis="none")에 대해
+    설문 응답을 기반으로 점수를 계산합니다.
+
+    ## 질문 설명
+    - Q_DES_B1: 문제 재정의 & UX 전략 수립 (1~5)
+    - Q_DES_B2: 정보 구조 & 사용자 흐름 구체화 (1~5)
+    - Q_DES_B3: 프로토타이핑 & 인터랙션 검증 (1~5)
+    - Q_DES_B4: 디자인 시스템 & 협업 구조 (1~5)
+    - Q_DES_B5: 근거 기반 UX 개선 (1~5)
+
+    ## 점수 변환
+    - 1점 → 0, 2점 → 25, 3점 → 50, 4점 → 75, 5점 → 100
+    """
+    try:
+        kpi_scores = calculate_designer_fallback_scores(
+            q_b1=request.q_b1,
+            q_b2=request.q_b2,
+            q_b3=request.q_b3,
+            q_b4=request.q_b4,
+            q_b5=request.q_b5
+        )
+
+        scores = [
+            FallbackKPIScore(
+                kpi_id=kpi_id,
+                kpi_name=data["kpi_name"],
+                score=data["score"],
+                level=data["level"],
+                source=data["source"]
+            )
+            for kpi_id, data in sorted(kpi_scores.items())
+        ]
+
+        return DesignerFallbackResponse(
             scores=scores,
             raw_inputs={
                 "q_b1": request.q_b1,
