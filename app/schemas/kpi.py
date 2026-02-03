@@ -85,3 +85,18 @@ class DesignerFallbackResponse(BaseModel):
     """디자이너 폴백 평가 응답."""
     scores: List[FallbackKPIScore] = Field(..., description="폴백으로 계산된 KPI 점수")
     raw_inputs: dict = Field(..., description="원본 입력값 (q_b1~q_b5)")
+
+
+class PMFallbackRequest(BaseModel):
+    """PM 폴백 평가 요청 (설문 기반)."""
+    q_b1: int = Field(..., ge=1, le=5, description="Q_PM_B1: 문제 정의 & 가설 수립 (1~5)")
+    q_b2: int = Field(..., ge=1, le=5, description="Q_PM_B2: 데이터 기반 판단 & 우선순위 (1~5)")
+    q_b3: int = Field(..., ge=1, le=5, description="Q_PM_B3: 서비스 구조 & 핵심 플로우 (1~5)")
+    q_b4: int = Field(..., ge=1, le=5, description="Q_PM_B4: 요구사항 정의 & 정책 문서화 (1~5)")
+    q_b5: int = Field(..., ge=1, le=5, description="Q_PM_B5: 실험·검증 기반 의사결정 (1~5)")
+
+
+class PMFallbackResponse(BaseModel):
+    """PM 폴백 평가 응답."""
+    scores: List[FallbackKPIScore] = Field(..., description="폴백으로 계산된 KPI 점수")
+    raw_inputs: dict = Field(..., description="원본 입력값 (q_b1~q_b5)")
