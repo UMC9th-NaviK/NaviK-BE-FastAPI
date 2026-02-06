@@ -325,14 +325,14 @@ def evaluate_resume_kpis(resume_text: str) -> Dict[int, Dict[str, any]]:
 {FEW_SHOT_EXAMPLES}
 
 ## 출력 형식
-반드시 JSON 형식으로만 응답해. 각 KPI에 대해 점수와 근거 수준(basis)을 함께 출력.
+반드시 JSON 형식으로만 응답해. 각 KPI에 대해 점수(score), 근거 수준(basis), 그리고 해당 점수를 준 **한 줄 근거 문장(reason)**을 함께 출력.
 
 ```json
 {{
-  "1": {{"score": 점수, "basis": "근거수준"}},
-  "2": {{"score": 점수, "basis": "근거수준"}},
+  "1": {{"score": 점수, "basis": "근거수준", "reason": "해당 KPI에 대해 이 점수를 준 한 줄 근거 문장"}},
+  "2": {{"score": 점수, "basis": "근거수준", "reason": "한 줄 근거 문장"}},
   ...
-  "10": {{"score": 점수, "basis": "근거수준"}}
+  "10": {{"score": 점수, "basis": "근거수준", "reason": "한 줄 근거 문장"}}
 }}
 ```
 
@@ -364,7 +364,7 @@ def evaluate_resume_kpis(resume_text: str) -> Dict[int, Dict[str, any]]:
 4. "문서로 정리", "협업" 추상적 언급만 → KPI 9는 중 상한
 5. "로그 정리", "기본 모니터링" → KPI 10은 중 상한
 
-JSON 형식으로 10개 KPI의 점수(score)와 근거수준(basis)을 출력해."""
+JSON 형식으로 10개 KPI의 점수(score), 근거수준(basis), 한 줄 근거 문장(reason)을 출력해."""
 
     try:
         response = client.chat.completions.create(
@@ -383,21 +383,22 @@ JSON 형식으로 10개 KPI의 점수(score)와 근거수준(basis)을 출력해
         # KPI ID를 int로 변환하고 범위 제한
         parsed_scores = {}
         for kpi_id, data in scores.items():
-            # 새 형식: {"score": 점수, "basis": "근거수준"}
+            # 새 형식: {"score": 점수, "basis": "근거수준", "reason": "한 줄 근거"}
             if isinstance(data, dict):
                 score = max(40, min(90, int(data.get("score", 45))))
                 basis = data.get("basis", "explicit")
-                # basis 값 검증
                 if basis not in ("explicit", "inferred", "none"):
                     basis = "explicit"
+                reason = (data.get("reason") or "").strip() or None
             else:
-                # 구 형식 호환: 점수만 있는 경우
                 score = max(40, min(90, int(data)))
                 basis = "explicit"
-            
+                reason = None
+
             parsed_scores[int(kpi_id)] = {
                 "score": score,
-                "basis": basis
+                "basis": basis,
+                "reason": reason,
             }
         
         return parsed_scores
@@ -405,4 +406,4 @@ JSON 형식으로 10개 KPI의 점수(score)와 근거수준(basis)을 출력해
     except Exception as e:
         print(f"LLM 평가 오류: {e}")
         # 오류 시 기본값 반환
-        return {i: {"score": 45, "basis": "none"} for i in range(1, 11)}
+        return {i: {"score": 45, "basis": "none", "reason": None} for i in range(1, 11)}

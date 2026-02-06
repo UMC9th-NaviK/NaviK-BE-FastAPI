@@ -14,8 +14,16 @@ class KPIScoreResult(BaseModel):
     score: int = Field(..., description="점수 (40~90)")
     level: str = Field(..., description="high/mid/low")
     basis: str = Field(
-        default="explicit", 
+        default="explicit",
         description="근거 수준: explicit(명시적 언급), inferred(간접 추론), none(언급 없음)"
+    )
+    reason: Optional[str] = Field(
+        default=None,
+        description="해당 점수를 준 한 줄 근거 문장 (백엔드 분석 시에만 포함)"
+    )
+    embedding: Optional[List[float]] = Field(
+        default=None,
+        description="reason 문장의 text-embedding-3-small 임베딩 벡터(1536차원, 백엔드 분석 시에만 포함)"
     )
 
 
