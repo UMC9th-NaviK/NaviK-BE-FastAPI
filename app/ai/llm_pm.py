@@ -9,6 +9,7 @@ from openai import OpenAI
 import json
 
 from app.core.config import settings
+from app.ai.prompts import REASON_FORMAT_RULES
 
 
 # KPI 정의 및 평가 기준
@@ -298,16 +299,17 @@ def evaluate_resume_kpis(resume_text: str) -> Dict[int, Dict[str, any]]:
 {FEW_SHOT_EXAMPLES}
 
 ## 출력 형식
-반드시 JSON 형식으로만 응답해. 각 KPI에 대해 점수와 근거 수준(basis)을 함께 출력.
+반드시 JSON 형식으로만 응답해. 각 KPI에 대해 점수(score), 근거 수준(basis), 해당 점수를 준 **한 줄 근거 문장(reason)**을 함께 출력.
 
 ```json
 {{
-  "1": {{"score": 점수, "basis": "근거수준"}},
-  "2": {{"score": 점수, "basis": "근거수준"}},
+  "1": {{"score": 점수, "basis": "근거수준", "reason": "해당 KPI에 대해 이 점수를 준 한 줄 근거 문장"}},
+  "2": {{"score": 점수, "basis": "근거수준", "reason": "한 줄 근거 문장"}},
   ...
-  "10": {{"score": 점수, "basis": "근거수준"}}
+  "10": {{"score": 점수, "basis": "근거수준", "reason": "한 줄 근거 문장"}}
 }}
 ```
+{REASON_FORMAT_RULES}
 
 ## 근거 수준(basis) 판단 기준
 - **"explicit"**: 텍스트에 해당 KPI 관련 **구체적 경험/업무/성과가 명시**되어 있음
@@ -326,7 +328,7 @@ def evaluate_resume_kpis(resume_text: str) -> Dict[int, Dict[str, any]]:
 
 {resume_text}
 
-JSON 형식으로 10개 KPI의 점수(score)와 근거수준(basis)을 출력해."""
+JSON 형식으로 10개 KPI의 점수(score), 근거수준(basis), 한 줄 근거 문장(reason)을 출력해."""
 
     try:
         response = client.chat.completions.create(
@@ -349,12 +351,14 @@ JSON 형식으로 10개 KPI의 점수(score)와 근거수준(basis)을 출력해
                 basis = data.get("basis", "explicit")
                 if basis not in ("explicit", "inferred", "none"):
                     basis = "explicit"
+                reason = (data.get("reason") or "").strip() or None
             else:
                 score = max(40, min(90, int(data)))
                 basis = "explicit"
-            parsed_scores[int(kpi_id)] = {"score": score, "basis": basis}
+                reason = None
+            parsed_scores[int(kpi_id)] = {"score": score, "basis": basis, "reason": reason}
         return parsed_scores
     
     except Exception as e:
         print(f"LLM 평가 오류: {e}")
-        return {i: {"score": 45, "basis": "none"} for i in range(1, 11)}
+        return {i: {"score": 45, "basis": "none", "reason": None} for i in range(1, 11)}
