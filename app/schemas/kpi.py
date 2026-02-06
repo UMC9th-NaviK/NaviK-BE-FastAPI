@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 
 class KPIScoreResult(BaseModel):
-    """KPI 점수 결과."""
+    """KPI 점수 결과 (reason/embedding 포함, 내부·abilities API용)."""
     kpi_id: int
     kpi_name: str
     score: int = Field(..., description="점수 (40~90)")
@@ -27,14 +27,40 @@ class KPIScoreResult(BaseModel):
     )
 
 
+class KPIScoreItem(BaseModel):
+    """KPI 점수 결과 (reason/embedding 없음, 기존 API·abilities API의 scores용)."""
+    kpi_id: int
+    kpi_name: str
+    score: int = Field(..., description="점수 (40~90)")
+    level: str = Field(..., description="high/mid/low")
+    basis: str = Field(
+        default="explicit",
+        description="근거 수준: explicit(명시적 언급), inferred(간접 추론), none(언급 없음)"
+    )
+
+
+class AbilityItem(BaseModel):
+    """KPI별 근거 문장과 임베딩 (scores 순서와 1:1)."""
+    content: Optional[str] = Field(default=None, description="해당 KPI 점수 근거 문장")
+    embedding: Optional[List[float]] = Field(default=None, description="content의 임베딩 벡터(1536차원)")
+
+
 class ResumeAnalysisRequest(BaseModel):
     """이력서 분석 요청."""
     resume_text: str = Field(..., description="이력서 텍스트")
 
 
 class ResumeAnalysisResponse(BaseModel):
-    """이력서 분석 응답."""
-    scores: List[KPIScoreResult] = Field(..., description="KPI별 점수 결과")
+    """이력서 분석 응답 (기존 API: reason/embedding 없음)."""
+    scores: List[KPIScoreItem] = Field(..., description="KPI별 점수 결과")
+    strengths: List[int] = Field(default_factory=list, description="강점 KPI ID 리스트 (상위 3개)")
+    weaknesses: List[int] = Field(default_factory=list, description="약점 KPI ID 리스트 (하위 3개)")
+
+
+class AnalyzeAbilitiesResponse(BaseModel):
+    """이력서 분석 + abilities 응답 (scores와 abilities가 순서대로 1:1)."""
+    scores: List[KPIScoreItem] = Field(..., description="KPI별 점수 결과")
+    abilities: List[AbilityItem] = Field(..., description="KPI 순서별 근거 문장·임베딩 (scores와 동일 순서)")
     strengths: List[int] = Field(default_factory=list, description="강점 KPI ID 리스트 (상위 3개)")
     weaknesses: List[int] = Field(default_factory=list, description="약점 KPI ID 리스트 (하위 3개)")
 

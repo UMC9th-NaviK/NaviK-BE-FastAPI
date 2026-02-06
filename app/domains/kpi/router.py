@@ -3,14 +3,15 @@ KPI domain API routes.
 """
 from fastapi import APIRouter, HTTPException
 
-from app.domains.kpi.service import analyze_resume
+from app.domains.kpi.service import analyze_resume, analyze_resume_abilities
 from app.domains.kpi.fallback_backend import calculate_fallback_scores
 from app.domains.kpi.fallback_frontend import calculate_fallback_scores as calculate_frontend_fallback_scores
 from app.domains.kpi.fallback_designer import calculate_fallback_scores as calculate_designer_fallback_scores
 from app.domains.kpi.fallback_pm import calculate_fallback_scores as calculate_pm_fallback_scores
 from app.schemas.kpi import (
-    ResumeAnalysisRequest, 
+    ResumeAnalysisRequest,
     ResumeAnalysisResponse,
+    AnalyzeAbilitiesResponse,
     BackendFallbackRequest,
     BackendFallbackResponse,
     FrontendFallbackRequest,
@@ -89,6 +90,31 @@ async def analyze_designer_resume_endpoint(
     try:
         result = analyze_resume(request.resume_text, role="designer")
         return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"분석 중 오류 발생: {str(e)}")
+
+
+ALLOWED_ROLES = {"backend", "frontend", "pm", "designer"}
+
+
+@router.post("/analyze/abilities/{role}", response_model=AnalyzeAbilitiesResponse)
+async def analyze_abilities_endpoint(
+    role: str,
+    request: ResumeAnalysisRequest,
+):
+    """
+    이력서 분석 + KPI 순서별 abilities(근거 문장·임베딩) 반환.
+    
+    scores와 abilities가 1:1로 같은 순서입니다.
+    직무명: backend, frontend, pm, designer
+    """
+    if role.lower() not in ALLOWED_ROLES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"role must be one of: {', '.join(sorted(ALLOWED_ROLES))}",
+        )
+    try:
+        return analyze_resume_abilities(request.resume_text, role=role.lower())
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"분석 중 오류 발생: {str(e)}")
 

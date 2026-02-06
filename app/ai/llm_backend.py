@@ -9,6 +9,7 @@ from openai import OpenAI
 import json
 
 from app.core.config import settings
+from app.ai.prompts import REASON_FORMAT_RULES
 
 
 # KPI 정의 및 평가 기준
@@ -335,6 +336,7 @@ def evaluate_resume_kpis(resume_text: str) -> Dict[int, Dict[str, any]]:
   "10": {{"score": 점수, "basis": "근거수준", "reason": "한 줄 근거 문장"}}
 }}
 ```
+{REASON_FORMAT_RULES}
 
 ## 근거 수준(basis) 판단 기준
 - **"explicit"**: 텍스트에 해당 KPI 관련 **구체적 경험/기술/성과가 명시**되어 있음

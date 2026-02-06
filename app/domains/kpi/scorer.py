@@ -11,6 +11,7 @@ from app.ai.llm_backend import evaluate_resume_kpis as evaluate_backend_kpis
 from app.ai.llm_frontend import evaluate_resume_kpis as evaluate_frontend_kpis
 from app.ai.llm_pm import evaluate_resume_kpis as evaluate_pm_kpis
 from app.ai.llm_designer import evaluate_resume_kpis as evaluate_designer_kpis
+from app.ai.prompts import normalize_reason
 from app.domains.kpi.kpi_constants import get_kpi_name
 
 
@@ -49,11 +50,11 @@ def calculate_kpi_scores(
     for kpi_id, data in scores.items():
         kpi_name = get_kpi_name(kpi_id, role=role)
         
-        # 새 형식: {"score": 점수, "basis": "근거수준", "reason": "한 줄 근거"(백엔드만)}
+        # 새 형식: {"score": 점수, "basis": "근거수준", "reason": "한 줄 근거"}
         if isinstance(data, dict):
             score = data.get("score", 45)
             basis = data.get("basis", "explicit")
-            reason = data.get("reason")
+            reason = normalize_reason(data.get("reason"))
         else:
             score = data
             basis = "explicit"
