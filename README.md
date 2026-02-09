@@ -287,7 +287,7 @@ docker run -d -p 8000:8000 --env-file .env navik-backend
 ## Support
 
 - **Issues**: [GitHub Issues](https://github.com/UMC9th-NaviK/NaviK-BE-FastAPI/issues)
-- **Organization**: UMC 9th - NaviK Team
+- **Organization**: [UMC 9th - NaviK Team](https://github.com/UMC9th-NaviK/NaviK-BE-Spring)
 
 ---
 
